@@ -1,0 +1,75 @@
+{
+	"name": "env-secure",
+	"version": "1.0.0",
+	"description": "Secure environment variables manager with public/private environments and user authentication",
+	"main": "dist/index.js",
+	"module": "dist/index.esm.js",
+	"types": "dist/index.d.ts",
+	"bin": {
+		"env-secure": "dist/cli.js"
+	},
+	"files": [
+		"dist/"
+	],
+	"private": false,
+	"publishConfig": {
+		"access": "public",
+		"registry": "https://registry.npmjs.org/"
+	},
+	"scripts": {
+		"start": "tsx -r tsconfig-paths/register src/index.ts",
+		"cli": "tsx -r tsconfig-paths/register src/cli.ts",
+		"build": "npm run clean && npm run build:types && npm run build:bundles",
+		"clean": "rimraf dist",
+		"build:types": "tsc --emitDeclarationOnly --declaration --outDir dist/types",
+		"build:bundles": "rollup -c --bundleConfigAsCjs",
+		"dev": "rollup -c --bundleConfigAsCjs -w",
+		"prepublishOnly": "npm run build",
+		"npm:publish": "npm publish --access=public"
+	},
+	"keywords": [
+		"env",
+		"environment",
+		"security",
+		"encryption",
+		"dotenv"
+	],
+	"author": "ISMAEL1361",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ismael1361/env-secure.git"
+	},
+	"bugs": {
+		"url": "https://github.com/ismael1361/env-secure/issues"
+	},
+	"homepage": "https://github.com/ismael1361/env-secure#readme",
+	"engines": {
+		"node": ">=16.0.0"
+	},
+	"dependencies": {
+		"tslib": "^2.8.1",
+		"bcryptjs": "^3.0.3",
+		"commander": "^14.0.3",
+		"crypto-js": "^4.2.0",
+		"pako": "^2.1.0",
+		"uuid": "^14.0.0"
+	},
+	"devDependencies": {
+		"@rollup/plugin-commonjs": "^29.0.2",
+		"@rollup/plugin-json": "^6.1.0",
+		"@rollup/plugin-node-resolve": "^16.0.3",
+		"@rollup/plugin-terser": "^1.0.0",
+		"@rollup/plugin-typescript": "^12.3.0",
+		"@types/crypto-js": "^4.2.2",
+		"@types/node": "^25.8.0",
+		"@types/pako": "^2.0.4",
+		"rimraf": "^6.1.3",
+		"rollup": "^4.60.4",
+		"rollup-plugin-dts": "^6.4.1",
+		"ts-node": "^10.9.2",
+		"tsconfig-paths": "^4.2.0",
+		"tsx": "^4.22.0",
+		"typescript": "^6.0.3"
+	}
+}
