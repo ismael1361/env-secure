@@ -183,15 +183,11 @@ program
 program
 	.command("load <envName> [--] [command...]")
 	.description("Loading variables and executing commands with them injected into the load.")
-	.allowUnknownOption() // Permite capturar argumentos após --
-	.action(async (envName, options) => {
+	.action(async (envName, command, args) => {
 		envName = ["-", ".", "root", "$", "default", ""].includes(envName) ? "root" : envName;
 
 		try {
-			const rawArgs = process.argv.slice(process.argv.indexOf("load") + 2);
-			const separatorIndex = rawArgs.indexOf("--");
-
-			const loaded = await load(envName, { filePath: options.path });
+			const loaded = await load(envName);
 
 			console.log(`Loaded ${Object.keys(loaded).length} environment variables "${envName || "root"}"`);
 
@@ -199,14 +195,6 @@ program
 			if (process.env.ENV_SECURE_DEBUG === "1") {
 				console.log("Loaded variables:", loaded);
 			}
-
-			let commandArgs: string[] = [];
-
-			if (separatorIndex !== -1) {
-				commandArgs = rawArgs.slice(separatorIndex + 1);
-			}
-
-			const [command, ...args] = commandArgs;
 
 			// Execute command with spawn
 			const child = spawn(command, args, {
