@@ -7,7 +7,7 @@ import { ENV_SECURE_FILE, RequiredAuthenticationError, UserError } from "./utils
  * Creates a new user in the environment file
  */
 export async function createUser(username: string, password: string, filePath: string = ENV_SECURE_FILE) {
-	const fileData = readSecureFile(filePath);
+	const fileData = await readSecureFile(filePath);
 
 	if (!fileData) {
 		throw new UserError("Environment file not found. Initialize the file before creating users.");
@@ -25,7 +25,7 @@ export async function createUser(username: string, password: string, filePath: s
 		"private-key": privateKey,
 	};
 
-	writeSecureFile(fileData, filePath);
+	await writeSecureFile(fileData, filePath);
 	return { success: true, message: `User "${username}" created successfully.` };
 }
 
@@ -33,7 +33,7 @@ export async function createUser(username: string, password: string, filePath: s
  * Authenticates a user and returns a session
  */
 export async function login(username: string, password: string, filePath: string = ENV_SECURE_FILE) {
-	const fileData = readSecureFile(filePath);
+	const fileData = await readSecureFile(filePath);
 
 	if (!fileData) {
 		throw new UserError("Environment file not found.");
@@ -54,7 +54,7 @@ export async function login(username: string, password: string, filePath: string
 	const privateKey = await decodePrivateKey(user["private-key"], password); // Decrypts private key for session
 
 	// Saves local session with decrypted private key (protected by OS password)
-	saveConfig({
+	await saveConfig({
 		username,
 		password,
 		privateKey,
@@ -72,7 +72,7 @@ export async function login(username: string, password: string, filePath: string
  * Removes the current user's session
  */
 export async function logout() {
-	clearConfig();
+	await clearConfig();
 	return { success: true, message: "Logout successful." };
 }
 
@@ -84,7 +84,7 @@ export async function getAuthenticatedUser() {
 }
 
 export async function createPrivateKeyForEnvironment(envName: string, filePath: string = ENV_SECURE_FILE): Promise<{ success: boolean; message: string; privateKey?: string }> {
-	const fileData = readSecureFile(filePath);
+	const fileData = await readSecureFile(filePath);
 	if (!fileData) {
 		throw new UserError("Environment file not found.");
 	}
@@ -94,19 +94,17 @@ export async function createPrivateKeyForEnvironment(envName: string, filePath: 
 		throw new RequiredAuthenticationError("Login required to create private environment.");
 	}
 
-	const user = fileData.users[session.username];
-
-	if (!user) {
+	if (!fileData.users[session.username]) {
 		throw new UserError(`User not found.`);
 	}
 
-	const isValid = await verifyPassword(session.password, user.hash);
+	const isValid = await verifyPassword(session.password, fileData.users[session.username].hash);
 
 	if (!isValid) {
 		throw new UserError("Incorrect password.");
 	}
 
-	const privateKey = await decodePrivateKey(user["private-key"], session.password);
+	const privateKey = await decodePrivateKey(fileData.users[session.username]["private-key"], session.password);
 
 	if (privateKey[envName]) {
 		return { success: true, message: `The private key for the environment "${envName}" already exists.`, privateKey: privateKey[envName] };
@@ -116,7 +114,7 @@ export async function createPrivateKeyForEnvironment(envName: string, filePath: 
 
 	const encodedPrivateKey = await encodePrivateKey(session.password, privateKey);
 	fileData.users[session.username]["private-key"] = encodedPrivateKey;
-	writeSecureFile(fileData, filePath);
+	await writeSecureFile(fileData, filePath);
 
 	return { success: true, message: `Private key for environment "${envName}" created successfully.`, privateKey: privateKey[envName] };
 }
@@ -125,7 +123,7 @@ export async function createPrivateKeyForEnvironment(envName: string, filePath: 
  * Checks if the user has access to an environment
  */
 export async function hasEnvironmentAccess(envName: string, filePath: string = ENV_SECURE_FILE) {
-	const fileData = readSecureFile(filePath);
+	const fileData = await readSecureFile(filePath);
 	if (!fileData) return { type: "public", accessible: true };
 
 	if (!fileData.environments[envName] || fileData.environments[envName].type === "public") {
@@ -134,7 +132,11 @@ export async function hasEnvironmentAccess(envName: string, filePath: string = E
 
 	const session = await getAuthenticatedUser();
 
-	if (session && session.privateKey && session.privateKey[envName]) {
+	if (!session) {
+		throw new RequiredAuthenticationError("Authentication required to access private environment.");
+	}
+
+	if (session.privateKey && session.privateKey[envName]) {
 		return { type: "private", accessible: true };
 	}
 
@@ -145,7 +147,7 @@ export async function hasEnvironmentAccess(envName: string, filePath: string = E
  * Gets the content of an environment (decrypting if necessary)
  */
 export async function getEnvironmentContent(envName: string, filePath: string = ENV_SECURE_FILE): Promise<string> {
-	const fileData = readSecureFile(filePath);
+	const fileData = await readSecureFile(filePath);
 	if (!fileData) return "";
 
 	// Try public environment first

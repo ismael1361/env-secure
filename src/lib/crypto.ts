@@ -31,32 +31,32 @@ export function generateFileId() {
  * Derives an encryption key from the user's password
  */
 export function deriveKey(password: string, salt: string): string {
-	return CryptoJS.PBKDF2(password, salt, {
+	return CryptoJS.PBKDF2(password, CryptoJS.enc.Hex.parse(salt), {
 		keySize: ENCRYPTION_KEY_SIZE / 4, // 32-bit words
 		iterations: 10000,
 	}).toString(CryptoJS.enc.Hex);
 }
 
 export function generatePrivateKey(): string {
-	const salt = CryptoJS.lib.WordArray.random(128 / 8).toString();
+	const salt = CryptoJS.lib.WordArray.random(128 / 8).toString(CryptoJS.enc.Hex);
 	const key = deriveKey(CryptoJS.lib.WordArray.random(ENCRYPTION_KEY_SIZE).toString(CryptoJS.enc.Hex), salt);
-	const iv = CryptoJS.lib.WordArray.random(128 / 8);
-	return [key, salt, iv.toString()].join(":");
+	const iv = CryptoJS.lib.WordArray.random(128 / 8).toString(CryptoJS.enc.Hex);
+	return [key, salt, iv].join(":");
 }
 
 export async function encodePrivateKey(password: string, privateKey: Record<string, string> = {}): Promise<string> {
-	const salt = CryptoJS.lib.WordArray.random(128 / 8).toString();
+	const salt = CryptoJS.lib.WordArray.random(128 / 8).toString(CryptoJS.enc.Hex);
 	const key = deriveKey(password, salt);
-	const iv = CryptoJS.lib.WordArray.random(128 / 8);
+	const iv = CryptoJS.lib.WordArray.random(128 / 8).toString(CryptoJS.enc.Hex);
 
 	return [
 		CryptoJS.AES.encrypt(JSON.stringify(privateKey), key, {
-			iv: iv,
+			iv: CryptoJS.enc.Hex.parse(iv),
 			mode: CryptoJS.mode.CBC,
 			padding: CryptoJS.pad.Pkcs7,
 		}).toString(),
 		salt,
-		iv.toString(),
+		iv,
 		await hashPassword(password),
 	].join(":");
 }
@@ -79,13 +79,11 @@ export async function decodePrivateKey(encoded: string, password: string): Promi
 export function encrypt(plainText: string, private_key: string) {
 	const [key, salt, iv] = private_key.split(":");
 
-	const encrypted = CryptoJS.AES.encrypt(plainText, key, {
+	return CryptoJS.AES.encrypt(plainText, key, {
 		iv: CryptoJS.enc.Hex.parse(iv),
 		mode: CryptoJS.mode.CBC,
 		padding: CryptoJS.pad.Pkcs7,
-	});
-
-	return encrypted.ciphertext.toString();
+	}).toString();
 }
 
 export function decrypt(ciphertext: string, private_key: string) {

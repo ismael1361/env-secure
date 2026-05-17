@@ -1,6 +1,6 @@
-import * as YAJBE from "./yajbe";
 import path from "path";
 import os from "os";
+import readline from "readline";
 
 export const CONFIG_PATH = path.join(os.homedir(), ".env-secure-config").toString();
 
@@ -11,12 +11,11 @@ export const ENV_SECURE_FILE = path.join(SESSION_PATH, ".env.secure").toString()
 export const ENV_EXAMPLE_FILE = path.join(SESSION_PATH, ".env.example").toString();
 
 export function obj2binary<T>(env: T): string {
-	return Buffer.from(YAJBE.encode(env)).toString("base64");
+	return Buffer.from(JSON.stringify(env, null, 2), "utf-8").toString("base64");
 }
 
 export function binary2obj<T>(binary: string): T {
-	const buffer = Buffer.from(binary, "base64");
-	return YAJBE.decode(buffer);
+	return JSON.parse(Buffer.from(binary, "base64").toString("utf-8"));
 }
 
 /**
@@ -158,4 +157,65 @@ export class PermissionDeniedError extends Error {
 		super(message);
 		this.name = "PERMISSION-DENIED-ERROR";
 	}
+}
+
+export function input(prompt: string, mask: boolean = false): Promise<string> {
+	return new Promise((resolve) => {
+		const rl = readline.createInterface({
+			input: process.stdin,
+			output: process.stdout,
+		});
+
+		// Mute the output so characters don't show
+		(rl as any).stdoutMuted = mask;
+
+		rl.question(prompt, (answer: string) => {
+			rl.close();
+			console.log(""); // Move to a new line after input
+			resolve(answer);
+		});
+
+		// Override the internal write function to suppress echoing
+		(rl as any)._writeToOutput = function _writeToOutput(stringToWrite: string) {
+			if ((rl as any).stdoutMuted) {
+				// Optionally print a mask like '*' instead of nothing
+				(rl as any).output.write("*");
+			} else {
+				(rl as any).output.write(stringToWrite);
+			}
+		};
+	});
+}
+
+/**
+ * Verifica se o item é um objeto real (e não null ou array)
+ */
+export const isObject = (item: any): item is Record<string, any> => {
+	return item && typeof item === "object" && !Array.isArray(item);
+};
+
+/**
+ * Executa o merge profundo de dois ou mais objetos.
+ */
+export function deepMerge<T>(target: T, ...sources: T[]): T {
+	if (!sources.length) return target;
+	const source = sources.shift();
+
+	if (isObject(target) && isObject(source)) {
+		for (const key in source) {
+			if (isObject(source[key])) {
+				if (!target[key]) Object.assign(target, { [key]: {} });
+				deepMerge(target[key], source[key]);
+			} else if (Array.isArray(source[key])) {
+				// Regra solicitada: Clona e mescla os arrays
+				const targetValue = target[key] || [];
+				(target as any)[key] = [...(Array.isArray(targetValue) ? targetValue : []), ...source[key]] as any;
+			} else {
+				// Para primitivos, apenas substitui
+				Object.assign(target, { [key]: source[key] });
+			}
+		}
+	}
+
+	return deepMerge(target, ...sources);
 }

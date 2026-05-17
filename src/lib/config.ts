@@ -17,17 +17,15 @@ interface ConfigData {
 /**
  * Saves session configuration (protected private key)
  */
-export function saveConfig(sessionData: SessionData) {
+export async function saveConfig(sessionData: SessionData) {
 	const password = CryptoJS.AES.encrypt(sessionData.password, process.env.ENV_SECURE_MASTER_KEY || "default-dev-key-do-not-use-in-prod").toString();
 
 	const configData: ConfigData = {};
 
-	if (fs.existsSync(CONFIG_PATH)) {
-		try {
-			const existingConfig = binary2obj<ConfigData>(fs.readFileSync(CONFIG_PATH, "utf8"));
-			Object.assign(configData, existingConfig);
-		} catch {}
-	}
+	try {
+		const existingConfig = binary2obj<ConfigData>(fs.readFileSync(CONFIG_PATH, "utf8"));
+		Object.assign(configData, existingConfig);
+	} catch {}
 
 	configData[SESSION_PATH] = {
 		...sessionData,
@@ -52,7 +50,7 @@ export async function loadConfig(filePath: string = ENV_SECURE_FILE): Promise<Se
 	if (!fs.existsSync(CONFIG_PATH)) return null;
 
 	try {
-		const fileData = readSecureFile(filePath);
+		const fileData = await readSecureFile(filePath);
 		if (!fileData) throw new ConfigError("Environment file not found.");
 
 		const config = binary2obj<ConfigData>(fs.readFileSync(CONFIG_PATH, "utf8"));
@@ -95,15 +93,15 @@ export async function loadConfig(filePath: string = ENV_SECURE_FILE): Promise<Se
 /**
  * Removes session configuration
  */
-export function clearConfig() {
-	if (fs.existsSync(CONFIG_PATH)) {
-		const config = binary2obj<ConfigData>(fs.readFileSync(CONFIG_PATH, "utf8"));
-		delete config[SESSION_PATH];
-		if (Object.keys(config).length > 0) {
-			fs.writeFileSync(CONFIG_PATH, obj2binary<ConfigData>(config), "utf8");
-		} else {
-			fs.unlinkSync(CONFIG_PATH);
-		}
+export async function clearConfig() {
+	if (!fs.existsSync(CONFIG_PATH)) return null;
+
+	const config = binary2obj<ConfigData>(fs.readFileSync(CONFIG_PATH, "utf8"));
+	delete config[SESSION_PATH];
+	if (Object.keys(config).length > 0) {
+		fs.writeFileSync(CONFIG_PATH, obj2binary<ConfigData>(config), "utf8");
+	} else {
+		fs.unlinkSync(CONFIG_PATH);
 	}
 }
 

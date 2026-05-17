@@ -1,7 +1,8 @@
 import fs from "fs";
 import pako from "pako";
 import { generateFileId, encrypt, decrypt } from "./crypto";
-import { binary2obj, ENV_EXAMPLE_FILE, ENV_SECURE_FILE, FileError, obj2binary } from "./utils";
+import { binary2obj, deepMerge, ENV_EXAMPLE_FILE, ENV_SECURE_FILE, FileError, obj2binary } from "./utils";
+import { logout } from "./user";
 
 interface SecureFileData {
 	id: string;
@@ -27,18 +28,23 @@ const DEFAULT_STRUCTURE: SecureFileData = {
 	users: {},
 };
 
+let cachedFileData: SecureFileData | null = null;
+
 /**
  * Reads and decrypts the environment file
  */
-export function readSecureFile(filePath: string = ENV_SECURE_FILE) {
-	if (!fs.existsSync(filePath)) {
-		return null;
-	}
+export async function readSecureFile(filePath: string = ENV_SECURE_FILE) {
+	if (!fs.existsSync(filePath)) return null;
 
 	try {
 		const encryptedContent = fs.readFileSync(filePath, "utf8");
-		const content = binary2obj<SecureFileData>(encryptedContent);
-		return content;
+		const data = binary2obj<SecureFileData>(encryptedContent);
+		if (cachedFileData) {
+			deepMerge(cachedFileData, data);
+		} else {
+			cachedFileData = data;
+		}
+		return cachedFileData;
 	} catch (err) {
 		// Corrupted file or invalid format
 		throw new FileError(`Error reading file ${filePath}: ${(err as Error)?.message || err}`);
@@ -48,17 +54,26 @@ export function readSecureFile(filePath: string = ENV_SECURE_FILE) {
 /**
  * Writes the environment file (encrypted or not)
  */
-export function writeSecureFile(data: SecureFileData, filePath: string = ENV_SECURE_FILE) {
+export async function writeSecureFile(data: SecureFileData, filePath: string = ENV_SECURE_FILE) {
+	if (cachedFileData) {
+		deepMerge(cachedFileData, data);
+	} else {
+		cachedFileData = data;
+	}
 	fs.writeFileSync(filePath, obj2binary(data), "utf8");
 }
 
 /**
  * Initializes a new environment file
  */
-export function initSecureFile(force: boolean = false, filePath: string = ENV_SECURE_FILE) {
+export async function initSecureFile(force: boolean = false, filePath: string = ENV_SECURE_FILE) {
 	if (fs.existsSync(filePath)) {
 		if (force) {
 			fs.unlinkSync(filePath);
+			if (fs.existsSync(ENV_EXAMPLE_FILE)) {
+				fs.unlinkSync(ENV_EXAMPLE_FILE);
+			}
+			await logout();
 		} else {
 			throw new FileError(`File ${filePath} already exists. Use 'force' to overwrite.`);
 		}
@@ -70,7 +85,7 @@ export function initSecureFile(force: boolean = false, filePath: string = ENV_SE
 		createdAt: new Date().toISOString(),
 	};
 
-	writeSecureFile(newFile, filePath);
+	await writeSecureFile(newFile, filePath);
 
 	if (!fs.existsSync(ENV_EXAMPLE_FILE)) {
 		fs.writeFileSync(ENV_EXAMPLE_FILE, "# Example .env file\n# VAR_NAME=value", "utf8");

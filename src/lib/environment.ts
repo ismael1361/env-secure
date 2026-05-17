@@ -11,7 +11,7 @@ type environmentOptions = { isPrivate?: boolean };
  */
 export async function createEnvironment(envName: string, options: environmentOptions = {}, filePath: string = ENV_SECURE_FILE) {
 	const { isPrivate = false } = options;
-	const fileData = readSecureFile(filePath);
+	const fileData = await readSecureFile(filePath);
 
 	if (!fileData) {
 		throw new EnvironmentError("Environment file not found. Run init first.");
@@ -47,7 +47,7 @@ export async function createEnvironment(envName: string, options: environmentOpt
 		fileData.environments[envName] = { type: "public", env: "" };
 	}
 
-	writeSecureFile(fileData, filePath);
+	await writeSecureFile(fileData, filePath);
 	return { success: true, message: `Environment "${envName}" created (${isPrivate ? "private" : "public"}).` };
 }
 
@@ -55,7 +55,7 @@ export async function createEnvironment(envName: string, options: environmentOpt
  * Remove an environment
  */
 export async function deleteEnvironment(envName: string, filePath: string = ENV_SECURE_FILE) {
-	const fileData = readSecureFile(filePath);
+	const fileData = await readSecureFile(filePath);
 	if (!fileData) {
 		throw new EnvironmentError("Environment file not found.");
 	}
@@ -63,7 +63,7 @@ export async function deleteEnvironment(envName: string, filePath: string = ENV_
 	// Check if it's a public environment
 	if (fileData.environments[envName] && fileData.environments[envName].type === "public") {
 		delete fileData.environments[envName];
-		writeSecureFile(fileData, filePath);
+		await writeSecureFile(fileData, filePath);
 		return { success: true, message: `Public environment "${envName}" removed.` };
 	}
 
@@ -84,7 +84,7 @@ export async function deleteEnvironment(envName: string, filePath: string = ENV_
 	const encodedPrivateKey = await encodePrivateKey(session.password, session.privateKey);
 	fileData.users[session.username]["private-key"] = encodedPrivateKey;
 
-	writeSecureFile(fileData, filePath);
+	await writeSecureFile(fileData, filePath);
 
 	return { success: true, message: `Private environment "${envName}" removed.` };
 }
@@ -93,7 +93,7 @@ export async function deleteEnvironment(envName: string, filePath: string = ENV_
  * Adds a variable to an environment
  */
 export async function addVariable(envName: string, variable: string, value: string, filePath: string = ENV_SECURE_FILE) {
-	const fileData = readSecureFile(filePath);
+	const fileData = await readSecureFile(filePath);
 
 	if (!fileData) {
 		throw new EnvironmentError("Environment file not found.");
@@ -131,7 +131,7 @@ export async function addVariable(envName: string, variable: string, value: stri
 		fileData.environments[envName].env = encrypted;
 	}
 
-	writeSecureFile(fileData, filePath);
+	await writeSecureFile(fileData, filePath);
 
 	if (fs.existsSync(ENV_EXAMPLE_FILE)) {
 		const exampleContent = fs.readFileSync(ENV_EXAMPLE_FILE, "utf8");
@@ -147,7 +147,7 @@ export async function addVariable(envName: string, variable: string, value: stri
  * Remove a variable from an environment
  */
 export async function removeVariable(envName: string, variable: string, filePath: string = ENV_SECURE_FILE) {
-	const fileData = readSecureFile(filePath);
+	const fileData = await readSecureFile(filePath);
 
 	if (!fileData) {
 		throw new EnvironmentError("Environment file not found.");
@@ -183,7 +183,7 @@ export async function removeVariable(envName: string, variable: string, filePath
 		fileData.environments[envName].env = encrypted;
 	}
 
-	writeSecureFile(fileData, filePath);
+	await writeSecureFile(fileData, filePath);
 
 	if (fs.existsSync(ENV_EXAMPLE_FILE)) {
 		const exampleContent = fs.readFileSync(ENV_EXAMPLE_FILE, "utf8");
