@@ -2,7 +2,7 @@
 import { Command } from "commander";
 import { initSecureFile } from "./lib/file";
 import { input, RequiredAuthenticationError } from "./lib/utils";
-import { createUser, login, logout } from "./lib/user";
+import { changePassword, createUser, login, logout, removeUser } from "./lib/user";
 import { createEnvironment, deleteEnvironment, addVariable, removeVariable, listVariables } from "./lib/environment";
 import { load } from "./index";
 import { spawn } from "child_process";
@@ -44,7 +44,7 @@ program
 		}),
 	);
 
-// npx env-secure create-user <username> --password <password>
+// npx env-secure create-user <username> [--password <password>]
 program
 	.command("create-user <username>")
 	.description("Create new user")
@@ -59,7 +59,7 @@ program
 		}),
 	);
 
-// npx env-secure login <username> --password <password>
+// npx env-secure login <username> [--password <password>]
 program
 	.command("login <username>")
 	.description("Authenticate user")
@@ -83,6 +83,38 @@ program
 	.action(
 		handleError(async () => {
 			const result = await logout();
+			console.log(result.message);
+		}),
+	);
+
+// npx env-secure change-password <username> [--password <currentPassword>] [--new-password <newPassword>]
+program
+	.command("change-password <username>")
+	.description("Change user password")
+	.option("-p, --password <password>", "Current password")
+	.option("-n, --new-password <newPassword>", "New password")
+	.action(
+		handleError(async (username, options) => {
+			if (!options.password) {
+				options.password = await input("Current Password: ", true);
+			}
+
+			if (!options.newPassword) {
+				options.newPassword = await input("New Password: ", true);
+			}
+
+			const result = await changePassword(username, options.password, options.newPassword);
+			console.log(result.message);
+		}),
+	);
+
+// npx env-secure remove-user <username>
+program
+	.command("remove-user <username>")
+	.description("Remove user")
+	.action(
+		handleError(async (username) => {
+			const result = await removeUser(username);
 			console.log(result.message);
 		}),
 	);

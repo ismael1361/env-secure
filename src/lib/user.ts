@@ -68,6 +68,61 @@ export async function login(username: string, password: string, filePath: string
 	};
 }
 
+export async function changePassword(username: string, oldPassword: string, newPassword: string, filePath: string = ENV_SECURE_FILE) {
+	const fileData = await readSecureFile(filePath);
+
+	if (!fileData) {
+		throw new UserError("Environment file not found.");
+	}
+
+	const user = fileData.users[username];
+
+	if (!user) {
+		throw new UserError(`User "${username}" not found.`);
+	}
+
+	const isValid = await verifyPassword(oldPassword, user.hash);
+
+	if (!isValid) {
+		throw new UserError("Incorrect current password.");
+	}
+
+	const newHash = await hashPassword(newPassword);
+
+	const oldPrivateKey = await decodePrivateKey(user["private-key"], oldPassword); // Decrypts old private key
+
+	const newPrivateKey = await encodePrivateKey(newPassword, oldPrivateKey); // Generates encrypted private key
+
+	user.hash = newHash;
+	user["private-key"] = newPrivateKey;
+
+	await writeSecureFile(fileData, filePath);
+
+	const session = await getAuthenticatedUser();
+	if (session && session.username === username) {
+		await logout(); // Clear session if the user is currently logged in
+		await login(username, newPassword, filePath); // Log in with new password to refresh session
+	}
+
+	return { success: true, message: `Password for "${username}" changed successfully.` };
+}
+
+export async function removeUser(username: string, filePath: string = ENV_SECURE_FILE) {
+	const fileData = await readSecureFile(filePath);
+
+	if (!fileData) {
+		throw new UserError("Environment file not found.");
+	}
+
+	if (!fileData.users[username]) {
+		throw new UserError(`User "${username}" not found.`);
+	}
+
+	delete fileData.users[username];
+	await writeSecureFile(fileData, filePath);
+	return { success: true, message: `User "${username}" removed successfully.` };
+}
+
 /**
  * Removes the current user's session
  */
