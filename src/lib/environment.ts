@@ -195,10 +195,7 @@ export async function removeVariable(envName: string, variable: string, filePath
 	return { success: true, message: `Variable "${variable}" removed from environment "${envName}".` };
 }
 
-/**
- * Lists variables of an environment
- */
-export async function listVariables(envName: string, filePath: string = ENV_SECURE_FILE) {
+export async function readEnvironment(envName: string, filePath: string = ENV_SECURE_FILE) {
 	const access = await hasEnvironmentAccess(envName, filePath);
 
 	if (!access.accessible) {
@@ -207,12 +204,60 @@ export async function listVariables(envName: string, filePath: string = ENV_SECU
 
 	const content = await getEnvironmentContent(envName, filePath);
 
-	const variables = envToJson(content, true);
-
 	return {
 		success: true,
 		environment: envName || "root",
 		type: access.type,
+		content,
+	};
+}
+
+export async function writeEnvironment(envName: string, content: string, filePath: string = ENV_SECURE_FILE) {
+	const access = await hasEnvironmentAccess(envName, filePath);
+
+	if (!access.accessible) {
+		throw new PermissionDeniedError(`No access to environment "${envName}".`);
+	}
+
+	if (access.type === "public") {
+		const fileData = await readSecureFile(filePath);
+		if (!fileData) {
+			throw new EnvironmentError("Environment file not found.");
+		}
+
+		fileData.environments[envName].env = content;
+		await writeSecureFile(fileData, filePath);
+		return { success: true, message: `Environment "${envName}" updated.` };
+	}
+
+	const session = await getAuthenticatedUser();
+	if (!session) {
+		throw new RequiredAuthenticationError("Authentication required to modify private environment.");
+	}
+
+	const encrypted = encryptContent(content, session.privateKey[envName]);
+
+	const fileData = await readSecureFile(filePath);
+	if (!fileData) {
+		throw new EnvironmentError("Environment file not found.");
+	}
+	fileData.environments[envName].env = encrypted;
+	await writeSecureFile(fileData, filePath);
+	return { success: true, message: `Environment "${envName}" updated.` };
+}
+
+/**
+ * Lists variables of an environment
+ */
+export async function listVariables(envName: string, filePath: string = ENV_SECURE_FILE) {
+	const { content, environment, type } = await readEnvironment(envName, filePath);
+
+	const variables = envToJson(content, true);
+
+	return {
+		success: true,
+		environment,
+		type,
 		variables,
 	};
 }

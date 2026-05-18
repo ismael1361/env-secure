@@ -3,9 +3,10 @@ import { Command } from "commander";
 import { initSecureFile } from "./lib/file";
 import { input, RequiredAuthenticationError } from "./lib/utils";
 import { changePassword, createUser, login, logout, removeUser } from "./lib/user";
-import { createEnvironment, deleteEnvironment, addVariable, removeVariable, listVariables } from "./lib/environment";
+import { createEnvironment, deleteEnvironment, addVariable, removeVariable, listVariables, readEnvironment, writeEnvironment } from "./lib/environment";
 import { load } from "./index";
 import { spawn } from "child_process";
+import { editor } from "./lib/editor";
 
 const program = new Command();
 
@@ -192,16 +193,50 @@ program
 		}),
 	);
 
-// npx env-secure list <env-name>
+// npx env-secure view <env-name>
 program
-	.command("list <envName>")
-	.description("List variables in environment")
+	.command("view <envName>")
+	.description("View variables in environment")
 	.action(
 		handleError(async (envName) => {
 			envName = ["-", ".", "root", "$", "default", ""].includes(envName) ? "root" : envName;
-			const result = await listVariables(envName);
-			const variables = Object.entries(result.variables);
-			console.table((variables.length > 0 ? variables : [["", ""]]).map(([key, value]) => ({ key: key, value: value })));
+			const { content } = await readEnvironment(envName);
+
+			editor(content || `# Editing environment "${envName}"\n# Use VAR_NAME=value format`).view();
+
+			// const result = await listVariables(envName);
+			// const variables = Object.entries(result.variables);
+			// console.table((variables.length > 0 ? variables : [["", ""]]).map(([key, value]) => ({ key: key, value: value })));
+		}),
+	);
+
+// npx env-secure edit <env-name>
+program
+	.command("edit <envName>")
+	.description("Edit environment variables in your default editor")
+	.action(
+		handleError(async (envName) => {
+			envName = ["-", ".", "root", "$", "default", ""].includes(envName) ? "root" : envName;
+			const { content } = await readEnvironment(envName);
+
+			// process.stdout.write("\u001B[?1049h");
+
+			editor(content || `# Editing environment "${envName}"\n# Use VAR_NAME=value format`)
+				.writable()
+				.on("data", (edited: string) => {
+					// do something with the text
+				})
+				.on("abort", (edited: string) => {
+					console.log("Edit aborted. No changes were made to the environment.");
+				})
+				.on("submit", async (edited: string) => {
+					if (edited !== content) {
+						const result = await writeEnvironment(envName, edited);
+						console.log(result.message);
+					} else {
+						console.log("No changes made to the environment.");
+					}
+				});
 		}),
 	);
 
