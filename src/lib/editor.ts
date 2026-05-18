@@ -182,7 +182,7 @@ class Editor extends EventEmitter {
 	}
 
 	private getPrefixWidth(totalRows: number, columns: number = this.getViewport().columns) {
-		return columns > 1 ? totalRows.toString().length + 1 : 0;
+		return columns > 1 ? totalRows.toString().length + 2 : 0;
 	}
 
 	private getLinePrefix(currentRow: number, totalRows: number, columns: number = this.getViewport().columns) {
@@ -325,7 +325,7 @@ class Editor extends EventEmitter {
 
 			for (let startColumn = 0; startColumn < line.length; startColumn += textWidth) {
 				const endColumn = Math.min(startColumn + textWidth, line.length);
-				const prefix = this.getLinePrefix(lineIndex, totalRows, columns);
+				const prefix = this.getLinePrefix(startColumn > 0 ? -1 : lineIndex, totalRows, columns);
 				this.cachedRenderedLines.push({
 					lineIndex,
 					startColumn,
@@ -419,7 +419,7 @@ class Editor extends EventEmitter {
 		const visibleContent = this.cachedRenderedLines.slice(this.scrollRowOffset, this.scrollRowOffset + visibleRows);
 
 		if (this.visibleOnly) {
-			this.stdout.write(`${visibleContent.map((line) => line.text).join("\n")}${visibleContent.length > 0 ? "\n" : ""}`);
+			this.stdout.write(`${["", ...visibleContent.map((line) => line.text), ""].join("\n")}${visibleContent.length > 0 ? "\n" : ""}`);
 			return;
 		}
 
