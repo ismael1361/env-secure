@@ -348,7 +348,7 @@ class Editor extends EventEmitter {
 			this.cachedLineStartRows[lineIndex] = this.cachedRenderedLines.length;
 
 			if (line.length === 0) {
-				const prefix = this.getLinePrefix(lineIndex, totalRows, columns);
+				const prefix = this.getLinePrefix(lineIndex + 1, totalRows, columns);
 				this.cachedRenderedLines.push({
 					lineIndex,
 					startColumn: 0,
@@ -372,10 +372,11 @@ class Editor extends EventEmitter {
 
 			for (let startColumn = 0; startColumn < line.length; startColumn += textWidth) {
 				const endColumn = Math.min(startColumn + textWidth, line.length);
-				const prefix = this.getLinePrefix(startColumn > 0 ? -1 : lineIndex, totalRows, columns);
+				const prefix = this.getLinePrefix(startColumn > 0 ? -1 : lineIndex + 1, totalRows, columns);
 				let content = line.slice(startColumn, endColumn);
 
-				const [key, value] = content.split("=").map((part) => part.trim());
+				const [key, ...v] = content.split("=").map((part) => part.trim());
+				const value = v.join("=");
 
 				if (key && value && value.length > 0) {
 					const coloredKey = color(key, "red");
