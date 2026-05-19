@@ -1,7 +1,6 @@
 import CryptoJS from "crypto-js";
 import bcrypt from "bcryptjs";
 import pako from "pako";
-import { v4 as uuidv4 } from "uuid";
 
 const SALT_ROUNDS = 10;
 const ENCRYPTION_KEY_SIZE = 32; // AES-256
@@ -24,7 +23,7 @@ export async function verifyPassword(password: string, hash: string) {
  * Generates a unique ID for the environment file
  */
 export function generateFileId() {
-	return uuidv4();
+	return crypto.randomUUID();
 }
 
 /**

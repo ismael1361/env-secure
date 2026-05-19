@@ -360,7 +360,7 @@ class Editor extends EventEmitter {
 
 			const valueColor = ((value: string): ColorCode => {
 				if (["true", "false"].includes(value.toLowerCase())) {
-					return "blue";
+					return "red";
 				}
 				if (!isNaN(Number(value))) {
 					return "yellow";
@@ -375,18 +375,22 @@ class Editor extends EventEmitter {
 				const prefix = this.getLinePrefix(startColumn > 0 ? -1 : lineIndex + 1, totalRows, columns);
 				let content = line.slice(startColumn, endColumn);
 
-				const [key, ...v] = content.split("=").map((part) => part.trim());
-				const value = v.join("=");
-
-				if (key && value && value.length > 0) {
-					const coloredKey = color(key, "red");
-					const coloredValue = color(value, valueColor);
-					content = `${coloredKey}${color("=", "magenta")}${coloredValue}`;
-					variableColored = true;
-				} else if (!variableColored) {
-					content = color(key, "red") + (content.includes("=") ? color("=", "magenta") : "") + (value && value.length > 0 ? color(value, valueColor) : "");
+				if (content.trim().startsWith("#")) {
+					content = color(content, "green");
 				} else {
-					content = color(content, valueColor);
+					const [key, ...v] = content.split("=").map((part) => part.trim());
+					const value = v.join("=");
+
+					if (key && value && value.length > 0) {
+						const coloredKey = color(key, "cyan");
+						const coloredValue = color(value, valueColor);
+						content = `${coloredKey}${color("=", "magenta")}${coloredValue}`;
+						variableColored = true;
+					} else if (!variableColored) {
+						content = color(key, "cyan") + (content.includes("=") ? color("=", "magenta") : "") + (value && value.length > 0 ? color(value, valueColor) : "");
+					} else {
+						content = color(content, valueColor);
+					}
 				}
 
 				this.cachedRenderedLines.push({

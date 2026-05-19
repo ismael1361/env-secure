@@ -1,8 +1,8 @@
-# env-secure
+# @ismael1361/env-secure
 
 Gerenciador file-based de variáveis de ambiente para Node.js com suporte a ambientes públicos e privados, autenticação local de usuário e execução de comandos com variáveis injetadas em tempo de execução.
 
-O foco do env-secure é organizar arquivos de ambiente em um fluxo simples de CLI, com uma camada adicional para separar o que pode ficar público do que precisa ficar protegido por senha dentro do projeto.
+O foco do @ismael1361/env-secure é organizar arquivos de ambiente em um fluxo simples de CLI, com uma camada adicional para separar o que pode ficar público do que precisa ficar protegido por senha dentro do projeto.
 
 ## O que este pacote entrega
 
@@ -36,15 +36,15 @@ O foco do env-secure é organizar arquivos de ambiente em um fluxo simples de CL
 
 > Mesmo com suporte a senha e criptografia para ambientes privados, esta arquitetura não foi desenhada para resistir a invasões de máquina, malware, roubo de credenciais, leitura de memória, comprometimento do sistema operacional, insiders maliciosos ou ataques de engenharia social.
 
-> Em outras palavras: o env-secure ajuda a organizar e reduzir exposição acidental, mas não deve ser tratado como barreira de segurança de alto nível contra hackers.
+> Em outras palavras: o @ismael1361/env-secure ajuda a organizar e reduzir exposição acidental, mas não deve ser tratado como barreira de segurança de alto nível contra hackers.
 
 > Para dados realmente críticos, ambientes de produção sensíveis, requisitos regulatórios ou modelo de ameaça mais sério, use um secret manager dedicado, como HashiCorp Vault, AWS Secrets Manager, GCP Secret Manager, Azure Key Vault, Doppler, 1Password Secrets Automation ou equivalente.
 
 Recomendações obrigatórias para uso responsável:
 
-- Use sempre uma senha forte, longa e única para criptografar seus dados no env-secure.
+- Use sempre uma senha forte, longa e única para criptografar seus dados no @ismael1361/env-secure.
 - Nunca reutilize a mesma senha que você usa em email, GitHub, banco, painel cloud, mensageria ou qualquer outra plataforma.
-- Trate a senha do env-secure como exclusiva deste projeto ou deste cofre local.
+- Trate a senha do @ismael1361/env-secure como exclusiva deste projeto ou deste cofre local.
 - Se a máquina for compartilhada, comprometida ou administrada por terceiros, assuma que a proteção local pode ser insuficiente.
 - Se você usar sessão persistida, configure ENV_SECURE_MASTER_KEY no ambiente local em vez de depender da chave padrão de desenvolvimento.
 - Nunca versione senhas, chaves mestres ou artefatos auxiliares contendo credenciais em texto puro.
@@ -93,19 +93,19 @@ Requisitos:
 Uso sem instalar:
 
 ```bash
-npx env-secure --help
+npx @ismael1361/env-secure --help
 ```
 
 Instalação no projeto:
 
 ```bash
-npm install env-secure
+npm install @ismael1361/env-secure
 ```
 
 Instalação global:
 
 ```bash
-npm install -g env-secure
+npm install -g @ismael1361/env-secure
 ```
 
 ## Quick start
@@ -113,7 +113,7 @@ npm install -g env-secure
 ### Inicialize o cofre local:
 
 ```bash
-npx env-secure init
+npx @ismael1361/env-secure init
 ```
 
 Esse comando cria um arquivo .env.secure no diretório atual, que é onde os ambientes serão armazenados. Ele também gera um .env.example para documentar as chaves usadas.
@@ -121,13 +121,13 @@ Esse comando cria um arquivo .env.secure no diretório atual, que é onde os amb
 ### Crie um usuário com uma senha forte e única:
 
 ```bash
-npx env-secure create-user username --password "SenhaUnicaMuitoForte#1234"
+npx @ismael1361/env-secure create-user username --password "SenhaUnicaMuitoForte#1234"
 ```
 
 Ou, se preferir inserir a senha interativamente:
 
 ```bash
-npx env-secure create-user username
+npx @ismael1361/env-secure create-user username
 ```
 
 Esse usuário será usado para autenticar e acessar ambientes privados. Lembre-se de usar uma senha que você não reutilize em nenhum outro lugar.
@@ -135,13 +135,13 @@ Esse usuário será usado para autenticar e acessar ambientes privados. Lembre-s
 ### Autentique-se:
 
 ```bash
-npx env-secure login username --password "SenhaUnicaMuitoForte#1234"
+npx @ismael1361/env-secure login username --password "SenhaUnicaMuitoForte#1234"
 ```
 
 Ou, se preferir inserir a senha interativamente:
 
 ```bash
-npx env-secure login username
+npx @ismael1361/env-secure login username
 ```
 
 Esse comando cria uma sessão local que permite acessar ambientes privados. Você pode usar a opção `--persist` para manter a sessão ativa por até 7 dias, mas isso aumenta o risco se a máquina for comprometida. Em ambiente de produção, utilize `--persist` para evitar expiração frequente, mas certifique-se de que a máquina esteja segura e que a senha seja forte.
@@ -149,13 +149,13 @@ Esse comando cria uma sessão local que permite acessar ambientes privados. Voc�
 ### Altere a senha de um usuário:
 
 ```bash
-npx env-secure change-password username --password "SenhaUnicaMuitoForte#1234" --new-password "NovaSenhaAindaMaisForte#5678"
+npx @ismael1361/env-secure change-password username --password "SenhaUnicaMuitoForte#1234" --new-password "NovaSenhaAindaMaisForte#5678"
 ```
 
 Ou, se preferir inserir as senhas interativamente:
 
 ```bash
-npx env-secure change-password username
+npx @ismael1361/env-secure change-password username
 ```
 
 Esse comando altera a senha do usuário especificado. Ele exige a senha atual para autenticação e a nova senha para atualização. Se o usuário estiver atualmente logado, a sessão será atualizada automaticamente para refletir a nova senha.
@@ -163,8 +163,8 @@ Esse comando altera a senha do usuário especificado. Ele exige a senha atual pa
 ### Defina variáveis compartilhadas no ambiente root:
 
 ```bash
-npx env-secure set root --key APP_NAME --value "meu-app"
-npx env-secure set root --key NODE_ENV --value "development"
+npx @ismael1361/env-secure set root --key APP_NAME --value "meu-app"
+npx @ismael1361/env-secure set root --key NODE_ENV --value "development"
 ```
 
 Essas variáveis estarão disponíveis em todos os ambientes, públicos ou privados, como base compartilhada.
@@ -172,8 +172,8 @@ Essas variáveis estarão disponíveis em todos os ambientes, públicos ou priva
 ### Crie um ambiente público para desenvolvimento:
 
 ```bash
-npx env-secure create-env dev
-npx env-secure set dev --key API_URL --value "https://dev.api.local"
+npx @ismael1361/env-secure create-env dev
+npx @ismael1361/env-secure set dev --key API_URL --value "https://dev.api.local"
 ```
 
 Esse ambiente ficará visível em texto claro dentro do arquivo .env.secure, mas ele é considerado "público" porque não exige autenticação para acesso.
@@ -181,8 +181,8 @@ Esse ambiente ficará visível em texto claro dentro do arquivo .env.secure, mas
 ### Crie um ambiente privado para produção:
 
 ```bash
-npx env-secure create-env prod --private
-npx env-secure set prod --key DATABASE_URL --value "postgres://usuario:senha@host/db"
+npx @ismael1361/env-secure create-env prod --private
+npx @ismael1361/env-secure set prod --key DATABASE_URL --value "postgres://usuario:senha@host/db"
 ```
 
 Esse ambiente ficará cifrado dentro do arquivo .env.secure e exigirá autenticação para acesso. Ele é considerado "privado" porque contém segredos que não devem ser expostos.
@@ -190,21 +190,21 @@ Esse ambiente ficará cifrado dentro do arquivo .env.secure e exigirá autentica
 ### Conceder acesso ao ambiente privado a um usuário:
 
 ```bash
-npx env-secure grant prod --user username2 --password "SenhaDoUsuario2#5678"
+npx @ismael1361/env-secure grant prod --user username2 --password "SenhaDoUsuario2#5678"
 ```
 
 Ou, se preferir inserir a senha interativamente:
 
 ```bash
-npx env-secure grant prod --user username2
+npx @ismael1361/env-secure grant prod --user username2
 ```
 
-Esse comando adiciona um usuário autorizado a acessar o ambiente privado prod. Ele exige que o usuário exista e que a senha seja fornecida para autenticação. O ambiente prod deve existir e ser privado para que esse comando funcione. Após conceder acesso, o usuário username2 poderá alterar a senha e usar `npx env-secure login username2` para acessar o ambiente prod.
+Esse comando adiciona um usuário autorizado a acessar o ambiente privado prod. Ele exige que o usuário exista e que a senha seja fornecida para autenticação. O ambiente prod deve existir e ser privado para que esse comando funcione. Após conceder acesso, o usuário username2 poderá alterar a senha e usar `npx @ismael1361/env-secure login username2` para acessar o ambiente prod.
 
 ### Excluir um ambiente:
 
 ```bash
-npx env-secure delete-env dev
+npx @ismael1361/env-secure delete-env dev
 ```
 
 Esse comando remove o ambiente dev completamente do arquivo .env.secure. Para ambientes privados, ele exigirá autenticação.
@@ -212,8 +212,8 @@ Esse comando remove o ambiente dev completamente do arquivo .env.secure. Para am
 ### Visualize ou edite o ambiente:
 
 ```bash
-npx env-secure view dev
-npx env-secure edit prod
+npx @ismael1361/env-secure view dev
+npx @ismael1361/env-secure edit prod
 ```
 
 Esses comandos permitem inspecionar o conteúdo de um ambiente ou editá-lo no editor de texto simples no terminal. O view é útil para uma olhada rápida, enquanto o edit é mais flexível para alterações completas, sem precisar de alterar uma variável individualmente.
@@ -221,8 +221,8 @@ Esses comandos permitem inspecionar o conteúdo de um ambiente ou editá-lo no e
 ### Execute um comando com as variáveis carregadas:
 
 ```bash
-npx env-secure load dev -- npm run dev
-npx env-secure load prod -- node dist/server.js
+npx @ismael1361/env-secure load dev -- npm run dev
+npx @ismael1361/env-secure load prod -- node dist/server.js
 ```
 
 Esses comandos carregam as variáveis do ambiente root + o ambiente especificado (dev ou prod) e as injetam no processo filho que executa o comando. Isso é ideal para scripts npm, CLIs e start local.
@@ -230,7 +230,7 @@ Esses comandos carregam as variáveis do ambiente root + o ambiente especificado
 ### Encerre a sessão:
 
 ```bash
-npx env-secure logout
+npx @ismael1361/env-secure logout
 ```
 
 Esse comando remove a sessão local, exigindo que o usuário faça login novamente para acessar ambientes privados.
@@ -260,7 +260,7 @@ Esse comando remove a sessão local, exigindo que o usuário faça login novamen
 O pacote expõe uma API pequena para leitura programática:
 
 ```ts
-import { load, isAuthenticated, getUser, logout } from "env-secure";
+import { load, isAuthenticated, getUser, logout } from "@ismael1361/env-secure";
 
 async function bootstrap() {
 	const env = await load("dev");
@@ -296,12 +296,12 @@ Observação importante: se você usar edit para alterar um ambiente manualmente
 - Mantenha segredos reais somente em ambientes privados.
 - Use nomes de ambiente simples e previsíveis, como dev, staging e prod.
 - Se for persistir sessão local, defina ENV_SECURE_MASTER_KEY fora do repositório.
-- Troque imediatamente a senha do env-secure se houver suspeita de reutilização, vazamento ou phishing.
+- Troque imediatamente a senha do @ismael1361/env-secure se houver suspeita de reutilização, vazamento ou phishing.
 - Se o seu caso de uso evoluir para requisitos mais rigorosos, migre para um secret manager dedicado em vez de tentar forçar este modelo além do objetivo dele.
 
 ## Resumo honesto
 
-O env-secure é útil quando você quer uma camada prática de organização e alguma proteção para ambientes privados em fluxos locais de desenvolvimento. Ele não deve ser vendido nem usado como solução antifraude, anti-invasão ou anti-engenharia-social.
+O @ismael1361/env-secure é útil quando você quer uma camada prática de organização e alguma proteção para ambientes privados em fluxos locais de desenvolvimento. Ele não deve ser vendido nem usado como solução antifraude, anti-invasão ou anti-engenharia-social.
 
 Se você publicar este pacote no NPM, o posicionamento mais correto é: uma ferramenta simples para organizar variáveis de ambiente com separação entre público e privado, não um cofre de segredos de nível corporativo.
 
