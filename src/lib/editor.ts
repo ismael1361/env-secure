@@ -66,6 +66,41 @@ type RenderedLine = {
 	text: string;
 };
 
+type ColorCode = "black" | "red" | "green" | "yellow" | "blue" | "magenta" | "cyan" | "white";
+
+function color(text: string, colorCode: ColorCode) {
+	let result = "";
+	switch (colorCode) {
+		case "black":
+			result += "\u001B[30m";
+			break;
+		case "red":
+			result += "\u001B[31m";
+			break;
+		case "green":
+			result += "\u001B[32m";
+			break;
+		case "yellow":
+			result += "\u001B[33m";
+			break;
+		case "blue":
+			result += "\u001B[34m";
+			break;
+		case "magenta":
+			result += "\u001B[35m";
+			break;
+		case "cyan":
+			result += "\u001B[36m";
+			break;
+		case "white":
+			result += "\u001B[37m";
+			break;
+	}
+	result += text;
+	result += RESET;
+	return result;
+}
+
 class Editor extends EventEmitter {
 	private stdin = process.stdin;
 	private stdout = process.stdout;
@@ -323,14 +358,41 @@ class Editor extends EventEmitter {
 				continue;
 			}
 
+			const valueColor = ((value: string): ColorCode => {
+				if (["true", "false"].includes(value.toLowerCase())) {
+					return "blue";
+				}
+				if (!isNaN(Number(value))) {
+					return "yellow";
+				}
+				return "white";
+			})(line.split("=")[1]?.trim() ?? "");
+
+			let variableColored = false;
+
 			for (let startColumn = 0; startColumn < line.length; startColumn += textWidth) {
 				const endColumn = Math.min(startColumn + textWidth, line.length);
 				const prefix = this.getLinePrefix(startColumn > 0 ? -1 : lineIndex, totalRows, columns);
+				let content = line.slice(startColumn, endColumn);
+
+				const [key, value] = content.split("=").map((part) => part.trim());
+
+				if (key && value && value.length > 0) {
+					const coloredKey = color(key, "red");
+					const coloredValue = color(value, valueColor);
+					content = `${coloredKey}${color("=", "magenta")}${coloredValue}`;
+					variableColored = true;
+				} else if (!variableColored) {
+					content = color(key, "red") + (content.includes("=") ? color("=", "magenta") : "") + (value && value.length > 0 ? color(value, valueColor) : "");
+				} else {
+					content = color(content, valueColor);
+				}
+
 				this.cachedRenderedLines.push({
 					lineIndex,
 					startColumn,
 					endColumn,
-					text: `${prefix ? `${INVERT}${prefix}${RESET} ` : ""}${line.slice(startColumn, endColumn)}`,
+					text: `${prefix ? `${INVERT}${prefix}${RESET} ` : ""}${content}`,
 				});
 			}
 		}
