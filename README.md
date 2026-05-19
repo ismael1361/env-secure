@@ -110,87 +110,154 @@ npm install -g env-secure
 
 ## Quick start
 
-Inicialize o cofre local:
+### Inicialize o cofre local:
 
 ```bash
 npx env-secure init
 ```
 
-Crie um usuário com uma senha forte e única:
+Esse comando cria um arquivo .env.secure no diretório atual, que é onde os ambientes serão armazenados. Ele também gera um .env.example para documentar as chaves usadas.
+
+### Crie um usuário com uma senha forte e única:
 
 ```bash
 npx env-secure create-user username --password "SenhaUnicaMuitoForte#1234"
 ```
 
-Autentique-se:
+Ou, se preferir inserir a senha interativamente:
+
+```bash
+npx env-secure create-user username
+```
+
+Esse usuário será usado para autenticar e acessar ambientes privados. Lembre-se de usar uma senha que você não reutilize em nenhum outro lugar.
+
+### Autentique-se:
 
 ```bash
 npx env-secure login username --password "SenhaUnicaMuitoForte#1234"
 ```
 
-Defina variáveis compartilhadas no ambiente root:
+Ou, se preferir inserir a senha interativamente:
+
+```bash
+npx env-secure login username
+```
+
+Esse comando cria uma sessão local que permite acessar ambientes privados. Você pode usar a opção `--persist` para manter a sessão ativa por até 7 dias, mas isso aumenta o risco se a máquina for comprometida. Em ambiente de produção, utilize `--persist` para evitar expiração frequente, mas certifique-se de que a máquina esteja segura e que a senha seja forte.
+
+### Altere a senha de um usuário:
+
+```bash
+npx env-secure change-password username --password "SenhaUnicaMuitoForte#1234" --new-password "NovaSenhaAindaMaisForte#5678"
+```
+
+Ou, se preferir inserir as senhas interativamente:
+
+```bash
+npx env-secure change-password username
+```
+
+Esse comando altera a senha do usuário especificado. Ele exige a senha atual para autenticação e a nova senha para atualização. Se o usuário estiver atualmente logado, a sessão será atualizada automaticamente para refletir a nova senha.
+
+### Defina variáveis compartilhadas no ambiente root:
 
 ```bash
 npx env-secure set root --key APP_NAME --value "meu-app"
 npx env-secure set root --key NODE_ENV --value "development"
 ```
 
-Crie um ambiente público para desenvolvimento:
+Essas variáveis estarão disponíveis em todos os ambientes, públicos ou privados, como base compartilhada.
+
+### Crie um ambiente público para desenvolvimento:
 
 ```bash
 npx env-secure create-env dev
 npx env-secure set dev --key API_URL --value "https://dev.api.local"
 ```
 
-Crie um ambiente privado para produção:
+Esse ambiente ficará visível em texto claro dentro do arquivo .env.secure, mas ele é considerado "público" porque não exige autenticação para acesso.
+
+### Crie um ambiente privado para produção:
 
 ```bash
 npx env-secure create-env prod --private
 npx env-secure set prod --key DATABASE_URL --value "postgres://usuario:senha@host/db"
 ```
 
-Visualize ou edite o ambiente:
+Esse ambiente ficará cifrado dentro do arquivo .env.secure e exigirá autenticação para acesso. Ele é considerado "privado" porque contém segredos que não devem ser expostos.
+
+### Conceder acesso ao ambiente privado a um usuário:
+
+```bash
+npx env-secure grant prod --user username2 --password "SenhaDoUsuario2#5678"
+```
+
+Ou, se preferir inserir a senha interativamente:
+
+```bash
+npx env-secure grant prod --user username2
+```
+
+Esse comando adiciona um usuário autorizado a acessar o ambiente privado prod. Ele exige que o usuário exista e que a senha seja fornecida para autenticação. O ambiente prod deve existir e ser privado para que esse comando funcione. Após conceder acesso, o usuário username2 poderá alterar a senha e usar `npx env-secure login username2` para acessar o ambiente prod.
+
+### Excluir um ambiente:
+
+```bash
+npx env-secure delete-env dev
+```
+
+Esse comando remove o ambiente dev completamente do arquivo .env.secure. Para ambientes privados, ele exigirá autenticação.
+
+### Visualize ou edite o ambiente:
 
 ```bash
 npx env-secure view dev
 npx env-secure edit prod
 ```
 
-Execute um comando com as variáveis carregadas:
+Esses comandos permitem inspecionar o conteúdo de um ambiente ou editá-lo no editor de texto simples no terminal. O view é útil para uma olhada rápida, enquanto o edit é mais flexível para alterações completas, sem precisar de alterar uma variável individualmente.
+
+### Execute um comando com as variáveis carregadas:
 
 ```bash
 npx env-secure load dev -- npm run dev
 npx env-secure load prod -- node dist/server.js
 ```
 
-Encerre a sessão:
+Esses comandos carregam as variáveis do ambiente root + o ambiente especificado (dev ou prod) e as injetam no processo filho que executa o comando. Isso é ideal para scripts npm, CLIs e start local.
+
+### Encerre a sessão:
 
 ```bash
 npx env-secure logout
 ```
 
+Esse comando remove a sessão local, exigindo que o usuário faça login novamente para acessar ambientes privados.
+
 ## Referência da CLI
 
-| Comando                     | O que faz                                    | Observações                                               |
-| --------------------------- | -------------------------------------------- | --------------------------------------------------------- |
-| init                        | Inicializa .env.secure e .env.example        | Use --force para sobrescrever                             |
-| create-user <username>      | Cria um usuário                              | Aceita --password                                         |
-| login <username>            | Autentica o usuário                          | Aceita --password                                         |
-| logout                      | Remove a sessão local                        | Sem parâmetros                                            |
-| change-password <username>  | Altera a senha do usuário                    | Aceita --password e --new-password                        |
-| remove-user <username>      | Remove um usuário                            | Não é um fluxo de governança avançado                     |
-| create-env <envName>        | Cria um ambiente                             | Use --private para ambiente privado                       |
-| delete-env <envName>        | Remove um ambiente                           | Ambiente privado exige autenticação                       |
-| add <envName>               | Adiciona uma variável                        | Requer --key e --value                                    |
-| set <envName>               | Define ou sobrescreve uma variável           | Requer --key e --value                                    |
-| remove <envName>            | Remove uma variável                          | Requer --key                                              |
-| view <envName>              | Visualiza o conteúdo do ambiente             | Bom para inspeção rápida                                  |
-| edit <envName>              | Edita o ambiente no editor padrão            | Fluxo mais livre, exige revisão posterior do .env.example |
-| load <envName> -- <comando> | Carrega root + ambiente e executa um comando | Ideal para npm scripts, CLIs e start local                |
+| Comando                           | O que faz                                            | Observações                                                                                                       |
+| --------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| init                              | Inicializa .env.secure e .env.example                | Use --force para sobrescrever                                                                                     |
+| create-user <username>            | Cria um usuário                                      | Aceita --password                                                                                                 |
+| login <username>                  | Autentica o usuário                                  | Aceita --password e --persist                                                                                     |
+| logout                            | Remove a sessão local                                | Sem parâmetros                                                                                                    |
+| change-password <username>        | Altera a senha do usuário                            | Aceita --password e --new-password                                                                                |
+| remove-user <username>            | Remove um usuário                                    | Não é um fluxo de governança avançado                                                                             |
+| create-env <envName>              | Cria um ambiente                                     | Use --private para ambiente privado                                                                               |
+| delete-env <envName>              | Remove um ambiente                                   | Ambiente privado exige autenticação                                                                               |
+| grant <envName> --user <username> | Concede acesso a um usuário para um ambiente privado | Requer autenticação do usuário e senha para concessão, aceita --read-only e --password do usuário a ser concedido |
+| add <envName>                     | Adiciona uma variável                                | Requer --key e --value                                                                                            |
+| set <envName>                     | Define ou sobrescreve uma variável                   | Requer --key e --value                                                                                            |
+| remove <envName>                  | Remove uma variável                                  | Requer --key                                                                                                      |
+| view <envName>                    | Visualiza o conteúdo do ambiente                     | Bom para inspeção rápida                                                                                          |
+| edit <envName>                    | Edita o ambiente no editor padrão                    | Fluxo mais livre, exige revisão posterior do .env.example                                                         |
+| load <envName> -- <comando>       | Carrega root + ambiente e executa um comando         | Ideal para npm scripts, CLIs e start local                                                                        |
 
 ## Uso programático
 
-O pacote expoe uma API pequena para leitura programática:
+O pacote expõe uma API pequena para leitura programática:
 
 ```ts
 import { load, isAuthenticated, getUser, logout } from "env-secure";

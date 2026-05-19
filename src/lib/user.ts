@@ -36,7 +36,7 @@ export async function createUser(username: string, password: string, filePath: s
 /**
  * Authenticates a user and returns a session
  */
-export async function login(username: string, password: string, filePath: string = ENV_SECURE_FILE) {
+export async function login(username: string, password: string, persist: boolean = false, filePath: string = ENV_SECURE_FILE) {
 	username = validateUsername(username);
 	password = validatePassword(password);
 
@@ -66,6 +66,7 @@ export async function login(username: string, password: string, filePath: string
 		password,
 		privateKey,
 		loggedInAt: new Date().toISOString(),
+		persist,
 	});
 
 	return {
@@ -112,7 +113,7 @@ export async function changePassword(username: string, oldPassword: string, newP
 	const session = await getAuthenticatedUser();
 	if (session && session.username === username) {
 		await logout(); // Clear session if the user is currently logged in
-		await login(username, newPassword, filePath); // Log in with new password to refresh session
+		await login(username, newPassword, session.persist, filePath); // Log in with new password to refresh session
 	}
 
 	return { success: true, message: `Password for "${username}" changed successfully.` };
@@ -149,6 +150,16 @@ export async function logout() {
  */
 export async function getAuthenticatedUser() {
 	return await getUserSession();
+}
+
+export async function grantAccess(
+	envName: string,
+	targetUsername: string,
+	password: string,
+	accessType: "read-only" | "read-write",
+	filePath: string = ENV_SECURE_FILE,
+): Promise<{ success: boolean; message: string }> {
+	throw new UserError("Granting access to other users is not implemented yet.");
 }
 
 export async function createPrivateKeyForEnvironment(envName: string, filePath: string = ENV_SECURE_FILE): Promise<{ success: boolean; message: string; privateKey?: string }> {

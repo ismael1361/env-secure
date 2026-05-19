@@ -2,7 +2,7 @@
 import { Command } from "commander";
 import { initSecureFile } from "./lib/file";
 import { input, RequiredAuthenticationError } from "./lib/utils";
-import { changePassword, createUser, login, logout, removeUser } from "./lib/user";
+import { changePassword, createUser, grantAccess, login, logout, removeUser } from "./lib/user";
 import { createEnvironment, deleteEnvironment, addVariable, removeVariable, readEnvironment, writeEnvironment } from "./lib/environment";
 import { load } from "./index";
 import { spawn } from "child_process";
@@ -65,12 +65,13 @@ program
 	.command("login <username>")
 	.description("Authenticate user")
 	.option("-p, --password <password>", "User password")
+	.option("--persist", "Persist session for 7 days (increases risk if machine is compromised)")
 	.action(
 		handleError(async (username, options) => {
 			if (!options.password) {
 				options.password = await input("Password: ", true);
 			}
-			const result = await login(username, options.password);
+			const result = await login(username, options.password, options.persist ? true : false);
 			console.log(result.message);
 			console.log(`User: ${result.user.username}`);
 			console.log(`Private environments: ${result.user.environments.join(", ") || "none"}`);
@@ -129,6 +130,24 @@ program
 		handleError(async (envName, options) => {
 			envName = ["-", ".", "root", "$", "default", ""].includes(envName) ? "root" : envName;
 			const result = await createEnvironment(envName, { isPrivate: options.private ? true : false });
+			console.log(result.message);
+		}),
+	);
+
+// npx env-secure grant <envName> --user <username> [--read-only] [--password <password>]
+program
+	.command("grant <envName>")
+	.description("Grant user access to a private environment")
+	.requiredOption("--user <username>", "Username to grant access")
+	.option("--read-only", "Grant read-only access (no edit permissions)")
+	.option("-p, --password <password>", "Your current password (if not provided, will prompt)")
+	.action(
+		handleError(async (envName, options) => {
+			if (!options.password) {
+				options.password = await input('"' + options.user + '" user Password: ', true);
+			}
+			envName = ["-", ".", "root", "$", "default", ""].includes(envName) ? "root" : envName;
+			const result = await grantAccess(envName, options.user, options.password, options.readOnly ? "read-only" : "read-write");
 			console.log(result.message);
 		}),
 	);

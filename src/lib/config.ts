@@ -8,6 +8,8 @@ interface SessionData extends Record<PropertyKey, any> {
 	username: string;
 	password: string;
 	loggedInAt: string;
+	expiresAt?: string;
+	persist?: boolean;
 }
 
 interface ConfigData {
@@ -31,7 +33,8 @@ export async function saveConfig(sessionData: SessionData) {
 		...sessionData,
 		password,
 		privateKey: undefined, // Does not save private key in the configuration file
-		// expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+		persist: sessionData.persist || false,
+		expiresAt: sessionData.persist ? undefined : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
 	};
 
 	fs.writeFileSync(CONFIG_PATH, obj2binary<ConfigData>(configData), "utf8");
@@ -58,10 +61,10 @@ export async function loadConfig(filePath: string = ENV_SECURE_FILE): Promise<Se
 		if (!config[SESSION_PATH]) return null;
 
 		// Check expiration
-		// if (new Date(config[SESSION_PATH].expiresAt) < new Date()) {
-		// 	clearConfig();
-		// 	return null;
-		// }
+		if (!!config[SESSION_PATH].expiresAt && new Date(config[SESSION_PATH].expiresAt!) < new Date() && !config[SESSION_PATH].persist) {
+			clearConfig();
+			return null;
+		}
 
 		// Decrypt private key
 		const masterKey = process.env.ENV_SECURE_MASTER_KEY || "default-dev-key-do-not-use-in-prod";
@@ -108,7 +111,7 @@ export async function clearConfig() {
 /**
  * Returns the active user session
  */
-export async function getUserSession(): Promise<{ username: string; privateKey: Record<string, string>; password: string; loggedInAt: string } | null> {
+export async function getUserSession(): Promise<{ username: string; privateKey: Record<string, string>; password: string; loggedInAt: string; persist: boolean } | null> {
 	const config = await loadConfig();
 	if (!config) return null;
 
@@ -117,5 +120,6 @@ export async function getUserSession(): Promise<{ username: string; privateKey: 
 		password: config.password,
 		privateKey: config.privateKey,
 		loggedInAt: config.loggedInAt,
+		persist: config.persist || false,
 	};
 }
