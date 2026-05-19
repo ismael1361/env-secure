@@ -31,7 +31,7 @@ export async function saveConfig(sessionData: SessionData) {
 		...sessionData,
 		password,
 		privateKey: undefined, // Does not save private key in the configuration file
-		expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+		// expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
 	};
 
 	fs.writeFileSync(CONFIG_PATH, obj2binary<ConfigData>(configData), "utf8");
@@ -58,10 +58,10 @@ export async function loadConfig(filePath: string = ENV_SECURE_FILE): Promise<Se
 		if (!config[SESSION_PATH]) return null;
 
 		// Check expiration
-		if (new Date(config[SESSION_PATH].expiresAt) < new Date()) {
-			clearConfig();
-			return null;
-		}
+		// if (new Date(config[SESSION_PATH].expiresAt) < new Date()) {
+		// 	clearConfig();
+		// 	return null;
+		// }
 
 		// Decrypt private key
 		const masterKey = process.env.ENV_SECURE_MASTER_KEY || "default-dev-key-do-not-use-in-prod";

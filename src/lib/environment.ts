@@ -3,6 +3,7 @@ import { readSecureFile, writeSecureFile, encryptContent } from "./file";
 import { getAuthenticatedUser, hasEnvironmentAccess, getEnvironmentContent, createPrivateKeyForEnvironment } from "./user";
 import { ENV_EXAMPLE_FILE, ENV_SECURE_FILE, EnvironmentError, envToJson, jsonToEnv, PermissionDeniedError, RequiredAuthenticationError } from "./utils";
 import fs from "fs";
+import { validateEnvironmentName, validateEnvironmentVariableKey, validateEnvironmentVariableValue } from "./validation";
 
 type environmentOptions = { isPrivate?: boolean };
 
@@ -10,6 +11,8 @@ type environmentOptions = { isPrivate?: boolean };
  * Create a new environment (public or private)
  */
 export async function createEnvironment(envName: string, options: environmentOptions = {}, filePath: string = ENV_SECURE_FILE) {
+	envName = validateEnvironmentName(envName);
+
 	const { isPrivate = false } = options;
 	const fileData = await readSecureFile(filePath);
 
@@ -55,6 +58,8 @@ export async function createEnvironment(envName: string, options: environmentOpt
  * Remove an environment
  */
 export async function deleteEnvironment(envName: string, filePath: string = ENV_SECURE_FILE) {
+	envName = validateEnvironmentName(envName);
+
 	const fileData = await readSecureFile(filePath);
 	if (!fileData) {
 		throw new EnvironmentError("Environment file not found.");
@@ -93,6 +98,10 @@ export async function deleteEnvironment(envName: string, filePath: string = ENV_
  * Adds a variable to an environment
  */
 export async function addVariable(envName: string, variable: string, value: string, filePath: string = ENV_SECURE_FILE) {
+	envName = validateEnvironmentName(envName);
+	variable = validateEnvironmentVariableKey(variable);
+	value = validateEnvironmentVariableValue(value);
+
 	const fileData = await readSecureFile(filePath);
 
 	if (!fileData) {
@@ -147,6 +156,9 @@ export async function addVariable(envName: string, variable: string, value: stri
  * Remove a variable from an environment
  */
 export async function removeVariable(envName: string, variable: string, filePath: string = ENV_SECURE_FILE) {
+	envName = validateEnvironmentName(envName);
+	variable = validateEnvironmentVariableKey(variable);
+
 	const fileData = await readSecureFile(filePath);
 
 	if (!fileData) {
@@ -196,6 +208,7 @@ export async function removeVariable(envName: string, variable: string, filePath
 }
 
 export async function readEnvironment(envName: string, filePath: string = ENV_SECURE_FILE) {
+	envName = validateEnvironmentName(envName);
 	const access = await hasEnvironmentAccess(envName, filePath);
 
 	if (!access.accessible) {
@@ -213,6 +226,7 @@ export async function readEnvironment(envName: string, filePath: string = ENV_SE
 }
 
 export async function writeEnvironment(envName: string, content: string, filePath: string = ENV_SECURE_FILE) {
+	envName = validateEnvironmentName(envName);
 	const access = await hasEnvironmentAccess(envName, filePath);
 
 	if (!access.accessible) {
@@ -250,6 +264,7 @@ export async function writeEnvironment(envName: string, content: string, filePat
  * Lists variables of an environment
  */
 export async function listVariables(envName: string, filePath: string = ENV_SECURE_FILE) {
+	envName = validateEnvironmentName(envName);
 	const { content, environment, type } = await readEnvironment(envName, filePath);
 
 	const variables = envToJson(content, true);

@@ -3,7 +3,7 @@ import { Command } from "commander";
 import { initSecureFile } from "./lib/file";
 import { input, RequiredAuthenticationError } from "./lib/utils";
 import { changePassword, createUser, login, logout, removeUser } from "./lib/user";
-import { createEnvironment, deleteEnvironment, addVariable, removeVariable, listVariables, readEnvironment, writeEnvironment } from "./lib/environment";
+import { createEnvironment, deleteEnvironment, addVariable, removeVariable, readEnvironment, writeEnvironment } from "./lib/environment";
 import { load } from "./index";
 import { spawn } from "child_process";
 import { editor } from "./lib/editor";

@@ -2,11 +2,15 @@ import { hashPassword, encodePrivateKey, decodePrivateKey, verifyPassword, gener
 import { readSecureFile, writeSecureFile, decryptContent } from "./file";
 import { saveConfig, clearConfig, getUserSession } from "./config";
 import { ENV_SECURE_FILE, RequiredAuthenticationError, UserError } from "./utils";
+import { validateEnvironmentName, validatePassword, validateUsername } from "./validation";
 
 /**
  * Creates a new user in the environment file
  */
 export async function createUser(username: string, password: string, filePath: string = ENV_SECURE_FILE) {
+	username = validateUsername(username);
+	password = validatePassword(password);
+
 	const fileData = await readSecureFile(filePath);
 
 	if (!fileData) {
@@ -33,6 +37,9 @@ export async function createUser(username: string, password: string, filePath: s
  * Authenticates a user and returns a session
  */
 export async function login(username: string, password: string, filePath: string = ENV_SECURE_FILE) {
+	username = validateUsername(username);
+	password = validatePassword(password);
+
 	const fileData = await readSecureFile(filePath);
 
 	if (!fileData) {
@@ -69,6 +76,10 @@ export async function login(username: string, password: string, filePath: string
 }
 
 export async function changePassword(username: string, oldPassword: string, newPassword: string, filePath: string = ENV_SECURE_FILE) {
+	username = validateUsername(username);
+	oldPassword = validatePassword(oldPassword);
+	newPassword = validatePassword(newPassword);
+
 	const fileData = await readSecureFile(filePath);
 
 	if (!fileData) {
@@ -108,6 +119,8 @@ export async function changePassword(username: string, oldPassword: string, newP
 }
 
 export async function removeUser(username: string, filePath: string = ENV_SECURE_FILE) {
+	username = validateUsername(username);
+
 	const fileData = await readSecureFile(filePath);
 
 	if (!fileData) {
@@ -139,6 +152,8 @@ export async function getAuthenticatedUser() {
 }
 
 export async function createPrivateKeyForEnvironment(envName: string, filePath: string = ENV_SECURE_FILE): Promise<{ success: boolean; message: string; privateKey?: string }> {
+	envName = validateEnvironmentName(envName);
+
 	const fileData = await readSecureFile(filePath);
 	if (!fileData) {
 		throw new UserError("Environment file not found.");
@@ -178,6 +193,8 @@ export async function createPrivateKeyForEnvironment(envName: string, filePath: 
  * Checks if the user has access to an environment
  */
 export async function hasEnvironmentAccess(envName: string, filePath: string = ENV_SECURE_FILE) {
+	envName = validateEnvironmentName(envName);
+
 	const fileData = await readSecureFile(filePath);
 	if (!fileData) return { type: "public", accessible: true };
 
@@ -202,6 +219,8 @@ export async function hasEnvironmentAccess(envName: string, filePath: string = E
  * Gets the content of an environment (decrypting if necessary)
  */
 export async function getEnvironmentContent(envName: string, filePath: string = ENV_SECURE_FILE): Promise<string> {
+	envName = validateEnvironmentName(envName);
+
 	const fileData = await readSecureFile(filePath);
 	if (!fileData) return "";
 
